@@ -1,0 +1,6 @@
+main: my.sample.plugin.MyPlugin
+name: MyPlugin
+version: 0.1.0
+commands:
+  myplugincommand:
+    aliases: ['myplugincmd']
