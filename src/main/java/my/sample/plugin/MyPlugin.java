@@ -1,20 +1,14 @@
 package my.sample.plugin;
 
-import io.typecraft.bukkit.view.BukkitView;
-import io.typecraft.bukkit.view.ChestView;
-import io.typecraft.bukkit.view.ViewAction;
-import io.typecraft.bukkit.view.ViewItem;
+import io.typecraft.bukkit.view.*;
 import io.typecraft.bukkit.view.page.PageContext;
 import io.typecraft.bukkit.view.page.PageViewLayout;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
@@ -60,31 +54,31 @@ public class MyPlugin extends JavaPlugin {
     }
 
     private static ChestView createChestView() {
-        Map<Integer, ViewItem> controls = new HashMap<>();
+        Map<Integer, ViewControl> controls = new HashMap<>();
         // set wall 0~8
-        ViewItem wall = ViewItem.just(new ItemStack(Material.BLACK_STAINED_GLASS_PANE));
+        ViewControl wall = ViewControl.just(new ItemStack(Material.BLACK_STAINED_GLASS_PANE));
         for (int i = 0; i < 9; i++) {
             controls.put(i, wall);
         }
         // set show button at 7
         ItemStack tpViewItem = createItemStack(Material.PLAYER_HEAD, "§aShow players", Collections.emptyList());
         // open the page view, and show this back if it closed
-        controls.put(7, ViewItem.of(tpViewItem, e ->
+        controls.put(7, ViewControl.of(tpViewItem, e ->
                 new ViewAction.Open(createMyViewLayout().toView(1)
                         .withOnClose(closeEvent -> new ViewAction.Open(createChestView())))));
         // set exit button at 8
         ItemStack barrierItem = createItemStack(Material.BARRIER, "§cEXIT", Collections.emptyList());
-        controls.put(8, ViewItem.of(barrierItem, e -> ViewAction.CLOSE));
+        controls.put(8, ViewControl.of(barrierItem, e -> ViewAction.CLOSE));
         // return
-        return new ChestView("bukkit-view chest", 6, controls);
+        return ChestView.just("bukkit-view chest", 6, ViewContents.ofControls(controls));
     }
 
     private static PageViewLayout createMyViewLayout() {
-        List<Function<PageContext, ViewItem>> pagingContents = Arrays.stream(Material.values())
+        List<Function<PageContext, ViewControl>> pagingContents = Arrays.stream(Material.values())
                 .filter(mat -> mat.isItem() && !mat.isAir())
-                .map(material -> (Function<PageContext, ViewItem>) ctx -> {
+                .map(material -> (Function<PageContext, ViewControl>) ctx -> {
                     ItemStack item = new ItemStack(material);
-                    return ViewItem.of(item, e -> {
+                    return ViewControl.of(item, e -> {
                         Player clicker = e.getClicker();
                         if (clicker.isOp()) {
                             clicker.getInventory().addItem(new ItemStack(material));
