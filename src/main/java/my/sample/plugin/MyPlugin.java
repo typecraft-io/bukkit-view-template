@@ -17,10 +17,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -71,7 +68,10 @@ public class MyPlugin extends JavaPlugin {
         }
         // set show button at 7
         ItemStack tpViewItem = createItemStack(Material.PLAYER_HEAD, "§aShow players", Collections.emptyList());
-        controls.put(7, ViewItem.of(tpViewItem, e -> new ViewAction.Open(createMyViewLayout().toView(1))));
+        // open the page view, and show this back if it closed
+        controls.put(7, ViewItem.of(tpViewItem, e ->
+                new ViewAction.Open(createMyViewLayout().toView(1)
+                        .withOnClose(closeEvent -> new ViewAction.Open(createChestView())))));
         // set exit button at 8
         ItemStack barrierItem = createItemStack(Material.BARRIER, "§cEXIT", Collections.emptyList());
         controls.put(8, ViewItem.of(barrierItem, e -> ViewAction.CLOSE));
@@ -80,23 +80,14 @@ public class MyPlugin extends JavaPlugin {
     }
 
     private static PageViewLayout createMyViewLayout() {
-        List<Function<PageContext, ViewItem>> pagingContents = Bukkit.getOnlinePlayers().stream()
-                .map(p -> (Function<PageContext, ViewItem>) ctx -> {
-                    ItemStack headItem = new ItemStack(Material.PLAYER_HEAD);
-                    SkullMeta meta = (SkullMeta) headItem.getItemMeta();
-                    if (meta != null) {
-                        meta.setOwningPlayer(p);
-                        headItem.setItemMeta(meta);
-                    }
-                    return ViewItem.of(headItem, e -> {
+        List<Function<PageContext, ViewItem>> pagingContents = Arrays.stream(Material.values())
+                .filter(mat -> mat.isItem() && !mat.isAir())
+                .map(material -> (Function<PageContext, ViewItem>) ctx -> {
+                    ItemStack item = new ItemStack(material);
+                    return ViewItem.of(item, e -> {
                         Player clicker = e.getClicker();
-                        if (!p.isOnline()) {
-                            clicker.sendMessage(ChatColor.RED + "Player '" + p.getName() + "' not in online!");
-                        } else if (clicker.isOp()) {
-                            clicker.teleport(p.getLocation());
-                            return ViewAction.CLOSE;
-                        } else {
-                            clicker.sendMessage(ChatColor.RED + "You are not a op!");
+                        if (clicker.isOp()) {
+                            clicker.getInventory().addItem(new ItemStack(material));
                         }
                         return ViewAction.NOTHING;
                     });
